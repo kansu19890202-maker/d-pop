@@ -12,7 +12,18 @@ export type Pop = {
 
 export const SAMPLE_AUTHOR = "Boomのがんちゃん";
 
-export const popularTags = ["2025", "2024", "トーナメント", "チラシ"];
+export const popularTags = [
+  "2025",
+  "2024",
+  "トーナメント",
+  "シングル",
+  "選手",
+  "コラボ",
+  "チラシ",
+  "ポスター",
+  "告知",
+  "イベント",
+];
 
 export const dummyPops: Pop[] = [
   {
@@ -21,7 +32,7 @@ export const dummyPops: Pop[] = [
     date: "2025.04.20",
     author: SAMPLE_AUTHOR,
     image: "/sample/20250420-01.png",
-    tags: ["2025"],
+    tags: ["2025", "選手", "告知"],
   },
   {
     id: "2",
@@ -29,7 +40,7 @@ export const dummyPops: Pop[] = [
     date: "2025.04.05",
     author: SAMPLE_AUTHOR,
     image: "/sample/20250405-02.png",
-    tags: ["2025"],
+    tags: ["2025", "選手"],
   },
   {
     id: "3",
@@ -37,7 +48,7 @@ export const dummyPops: Pop[] = [
     date: "2025.03.19",
     author: SAMPLE_AUTHOR,
     image: "/sample/20250319-03.png",
-    tags: ["2025"],
+    tags: ["2025", "選手", "コラボ"],
   },
   {
     id: "4",
@@ -45,7 +56,7 @@ export const dummyPops: Pop[] = [
     date: "2025.02.05",
     author: SAMPLE_AUTHOR,
     image: "/sample/20250205-04.png",
-    tags: ["2025"],
+    tags: ["2025", "イベント", "告知"],
   },
   {
     id: "5",
@@ -53,7 +64,7 @@ export const dummyPops: Pop[] = [
     date: "2024.11.06",
     author: SAMPLE_AUTHOR,
     image: "/sample/20241106-05.png",
-    tags: ["2024"],
+    tags: ["2024", "イベント"],
   },
   {
     id: "6",
@@ -61,7 +72,7 @@ export const dummyPops: Pop[] = [
     date: "2024.10.26",
     author: SAMPLE_AUTHOR,
     image: "/sample/20241026-06.png",
-    tags: ["2024", "トーナメント"],
+    tags: ["2024", "トーナメント", "シングル"],
   },
   {
     id: "7",
@@ -69,7 +80,7 @@ export const dummyPops: Pop[] = [
     date: "2024.10.25",
     author: SAMPLE_AUTHOR,
     image: "/sample/20241025-07.png",
-    tags: ["2024"],
+    tags: ["2024", "選手", "コラボ"],
   },
   {
     id: "8",
@@ -77,7 +88,7 @@ export const dummyPops: Pop[] = [
     date: "2024.10.12",
     author: SAMPLE_AUTHOR,
     image: "/sample/20241012-08.png",
-    tags: ["2024"],
+    tags: ["2024", "選手"],
   },
   {
     id: "9",
@@ -85,7 +96,7 @@ export const dummyPops: Pop[] = [
     date: "2024.09.06",
     author: SAMPLE_AUTHOR,
     image: "/sample/20240906-09.png",
-    tags: ["2024"],
+    tags: ["2024", "選手"],
   },
   {
     id: "10",
@@ -93,7 +104,7 @@ export const dummyPops: Pop[] = [
     date: "2024.09.02",
     author: SAMPLE_AUTHOR,
     image: "/sample/20240902-10.png",
-    tags: ["2024"],
+    tags: ["2024", "告知"],
   },
   {
     id: "11",
@@ -101,7 +112,7 @@ export const dummyPops: Pop[] = [
     date: "2024.08",
     author: SAMPLE_AUTHOR,
     image: "/sample/20240801-11.png",
-    tags: ["2024"],
+    tags: ["2024", "イベント"],
   },
   {
     id: "12",
@@ -109,7 +120,7 @@ export const dummyPops: Pop[] = [
     date: "2024.07.23",
     author: SAMPLE_AUTHOR,
     image: "/sample/20240723-12.png",
-    tags: ["2024", "チラシ"],
+    tags: ["2024", "チラシ", "ポスター"],
   },
   {
     id: "13",
@@ -117,6 +128,6 @@ export const dummyPops: Pop[] = [
     date: "2024.06.30",
     author: SAMPLE_AUTHOR,
     image: "/sample/20240630-13.png",
-    tags: ["2024", "チラシ"],
+    tags: ["2024", "チラシ", "告知"],
   },
 ];

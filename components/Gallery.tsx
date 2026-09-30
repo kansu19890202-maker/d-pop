@@ -21,9 +21,37 @@ type GalleryProps = {
   pops: Pop[];
 };
 
+type SortKey =
+  | "newest"
+  | "oldest"
+  | "likes"
+  | "comments"
+  | "views"
+  | "commented"
+  | "popular";
+
+const SORT_OPTIONS: { value: SortKey; label: string }[] = [
+  { value: "newest", label: "新着順" },
+  { value: "oldest", label: "古い順" },
+  { value: "likes", label: "人気の高い順" },
+  { value: "comments", label: "コメントの多い順" },
+  { value: "views", label: "よく見られている順" },
+  { value: "commented", label: "コメントがあるもの" },
+  { value: "popular", label: "人気作のみ" },
+];
+
+function popTimestamp(pop: Pop) {
+  if (pop.createdAt) return pop.createdAt;
+  const digits = pop.date.replace(/\D/g, "").padEnd(8, "01").slice(0, 8);
+  return Date.parse(
+    `${digits.slice(0, 4)}-${digits.slice(4, 6)}-${digits.slice(6, 8)}`,
+  ) || 0;
+}
+
 export function Gallery({ pops }: GalleryProps) {
   const [query, setQuery] = useState("");
   const [activeTag, setActiveTag] = useState<string | null>(null);
+  const [sortKey, setSortKey] = useState<SortKey>("newest");
   useSyncExternalStore(subscribeSocial, getSocialVersion, () => 0);
   const popsVersion = useSyncExternalStore(subscribePops, getPopsVersion, () => 0);
   const [allPops, setAllPops] = useState<Pop[]>(pops);
@@ -32,9 +60,18 @@ export function Gallery({ pops }: GalleryProps) {
     setAllPops(listAllPops());
   }, [pops, popsVersion]);
 
+  const tagChips = useMemo(() => {
+    const extras = new Set<string>();
+    for (const pop of allPops) {
+      for (const tag of pop.tags) extras.add(tag);
+    }
+    const rest = [...extras].filter((tag) => !popularTags.includes(tag)).sort();
+    return [...popularTags, ...rest];
+  }, [allPops]);
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return allPops.filter((pop) => {
+    const next = allPops.filter((pop) => {
       const matchesTag = !activeTag || pop.tags.includes(activeTag);
       const matchesQuery =
         !q ||
@@ -42,9 +79,23 @@ export function Gallery({ pops }: GalleryProps) {
         pop.date.toLowerCase().includes(q) ||
         pop.author.toLowerCase().includes(q) ||
         pop.tags.some((tag) => tag.toLowerCase().includes(q));
-      return matchesTag && matchesQuery;
+      if (!matchesTag || !matchesQuery) return false;
+      if (sortKey === "commented") return getComments(pop.id).length > 0;
+      if (sortKey === "popular") return getLikeCount(pop.id) >= 50;
+      return true;
     });
-  }, [allPops, query, activeTag]);
+
+    next.sort((a, b) => {
+      if (sortKey === "oldest") return popTimestamp(a) - popTimestamp(b);
+      if (sortKey === "likes") return getLikeCount(b.id) - getLikeCount(a.id);
+      if (sortKey === "comments") {
+        return getComments(b.id).length - getComments(a.id).length;
+      }
+      if (sortKey === "views") return getViewCount(b.id) - getViewCount(a.id);
+      return popTimestamp(b) - popTimestamp(a);
+    });
+    return next;
+  }, [allPops, query, activeTag, sortKey]);
 
   return (
     <div className="min-h-full bg-black pb-24 text-white">
@@ -109,7 +160,7 @@ export function Gallery({ pops }: GalleryProps) {
         </div>
         <div className="mx-auto max-w-5xl border-t border-white/10">
           <div className="flex gap-2 overflow-x-auto px-3 py-2.5 scrollbar-none sm:px-4">
-            {popularTags.map((tag) => {
+            {tagChips.map((tag) => {
               const selected = activeTag === tag;
               return (
                 <button
@@ -133,6 +184,37 @@ export function Gallery({ pops }: GalleryProps) {
       </header>
 
       <main className="mx-auto max-w-5xl">
+        <div className="flex justify-end px-2 pt-2 md:px-3 md:pt-3">
+          <label className="flex items-center gap-2 text-xs text-zinc-400">
+            <span className="hidden sm:inline">並び替え</span>
+            <select
+              value={sortKey}
+              onChange={(event) => setSortKey(event.target.value as SortKey)}
+              className="max-w-[11.5rem] rounded-full bg-zinc-900 py-1.5 pl-3 pr-8 text-xs text-white outline-none ring-1 ring-white/10 focus:ring-2 focus:ring-white/40"
+            >
+              <optgroup label="ソート">
+                {SORT_OPTIONS.filter((option) =>
+                  ["newest", "oldest", "likes", "comments", "views"].includes(
+                    option.value,
+                  ),
+                ).map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </optgroup>
+              <optgroup label="絞り込み">
+                {SORT_OPTIONS.filter((option) =>
+                  ["commented", "popular"].includes(option.value),
+                ).map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </optgroup>
+            </select>
+          </label>
+        </div>
         {filtered.length === 0 ? (
           <p className="px-4 py-16 text-center text-sm text-zinc-400">
             条件に一致するPOPはありません
