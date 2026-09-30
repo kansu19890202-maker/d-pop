@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800">
+  <rect width="800" height="800" fill="#111827"/>
+  <rect x="60" y="60" width="680" height="680" fill="none" stroke="#f59e0b" stroke-width="10"/>
+  <text x="400" y="280" text-anchor="middle" fill="#fbbf24" font-family="Arial Black, sans-serif" font-size="140" font-weight="900">180</text>
+  <text x="400" y="430" text-anchor="middle" fill="#fff" font-family="Arial Black, sans-serif" font-size="48">CHALLENGE</text>
+  <text x="400" y="520" text-anchor="middle" fill="#d1d5db" font-family="Arial, sans-serif" font-size="24">MAX SCORE NIGHT</text>
+</svg>

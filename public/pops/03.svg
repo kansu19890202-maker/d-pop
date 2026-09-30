@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800">
+  <rect width="800" height="800" fill="#0f172a"/>
+  <polygon points="400,120 680,640 120,640" fill="none" stroke="#22d3ee" stroke-width="14"/>
+  <text x="400" y="420" text-anchor="middle" fill="#fff" font-family="Arial Black, sans-serif" font-size="44">FRIDAY</text>
+  <text x="400" y="490" text-anchor="middle" fill="#67e8f9" font-family="Arial Black, sans-serif" font-size="56">FLIGHT</text>
+</svg>

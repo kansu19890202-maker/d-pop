@@ -36,6 +36,11 @@ yarn-error.log*
 # vercel
 .vercel
 
+# source assets (copies used from public/)
+サンプル/
+DPOPロゴ.jpg
+DPOPロゴ.svg
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

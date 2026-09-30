@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800">
+  <rect width="800" height="800" fill="#1e3a5f"/>
+  <rect x="80" y="280" width="280" height="240" fill="#2563eb"/>
+  <rect x="440" y="280" width="280" height="240" fill="#dc2626"/>
+  <text x="400" y="200" text-anchor="middle" fill="#fff" font-family="Arial Black, sans-serif" font-size="48">TEAM</text>
+  <text x="400" y="620" text-anchor="middle" fill="#93c5fd" font-family="Arial Black, sans-serif" font-size="48">MATCH</text>
+</svg>

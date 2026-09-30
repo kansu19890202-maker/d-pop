@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800">
+  <rect width="400" height="800" fill="#111827"/>
+  <rect x="400" width="400" height="800" fill="#e5e7eb"/>
+  <text x="200" y="400" text-anchor="middle" fill="#fff" font-family="Arial Black, sans-serif" font-size="40">STEEL</text>
+  <text x="600" y="400" text-anchor="middle" fill="#111827" font-family="Arial Black, sans-serif" font-size="40">SOFT</text>
+  <text x="400" y="700" text-anchor="middle" fill="#ef4444" font-family="Arial Black, sans-serif" font-size="36">VS</text>
+</svg>

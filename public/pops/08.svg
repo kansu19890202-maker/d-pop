@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800">
+  <rect width="800" height="800" fill="#18181b"/>
+  <text x="400" y="340" text-anchor="middle" fill="#f87171" font-family="Arial Black, sans-serif" font-size="48">LAST MAN</text>
+  <text x="400" y="430" text-anchor="middle" fill="#fff" font-family="Arial Black, sans-serif" font-size="56">STANDING</text>
+  <circle cx="400" cy="560" r="40" fill="#ef4444"/>
+</svg>
