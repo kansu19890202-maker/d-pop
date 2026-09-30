@@ -23,6 +23,16 @@ export const popularTags = [
   "ポスター",
   "告知",
   "イベント",
+  "山田勇樹",
+  "鈴木未来",
+  "坂口優希恵",
+  "浅田斉吾",
+  "村松治樹",
+  "森田真結子",
+  "後藤智弥",
+  "小野恵太",
+  "岩田夏海",
+  "知野真澄",
 ];
 
 export const dummyPops: Pop[] = [
@@ -48,7 +58,7 @@ export const dummyPops: Pop[] = [
     date: "2025.03.19",
     author: SAMPLE_AUTHOR,
     image: "/sample/20250319-03.png",
-    tags: ["2025", "選手", "コラボ"],
+    tags: ["2025", "選手", "コラボ", "村松治樹", "鈴木未来"],
   },
   {
     id: "4",
@@ -80,7 +90,7 @@ export const dummyPops: Pop[] = [
     date: "2024.10.25",
     author: SAMPLE_AUTHOR,
     image: "/sample/20241025-07.png",
-    tags: ["2024", "選手", "コラボ"],
+    tags: ["2024", "選手", "コラボ", "岩田夏海"],
   },
   {
     id: "8",
@@ -96,7 +106,7 @@ export const dummyPops: Pop[] = [
     date: "2024.09.06",
     author: SAMPLE_AUTHOR,
     image: "/sample/20240906-09.png",
-    tags: ["2024", "選手"],
+    tags: ["2024", "選手", "岩田夏海"],
   },
   {
     id: "10",
