@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { LegalPage, LegalSection } from "@/components/LegalPage";
 
 export const metadata: Metadata = {
@@ -101,7 +102,11 @@ export default function PrivacyPage() {
 
       <LegalSection title="第10条（お問い合わせ）">
         <p>
-          本ポリシーに関するお問い合わせは、本サービス内の案内に従い、運営までご連絡ください。
+          本ポリシーおよび権利侵害に関するお問い合わせは、
+          <Link href="/contact" className="text-white underline decoration-white/30 underline-offset-4">
+            お問い合わせ・権利侵害に関するお申し立て
+          </Link>
+          ページの案内に従い、運営までご連絡ください。
         </p>
       </LegalSection>
     </LegalPage>

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { LegalPage, LegalSection } from "@/components/LegalPage";
 
 export const metadata: Metadata = {
@@ -107,6 +108,13 @@ export default function TermsPage() {
           </li>
           <li>
             運営は、本規約の第4条（禁止事項）に抵触すると判断した場合、または閲覧者からの「通報」により不適切と判断した場合、ユーザーへの事前の通知・理由の開示なしに、該当コンテンツを削除、非表示、またはアクセス制限する絶対的な権利を有します。
+          </li>
+          <li>
+            選手、所属事務所、メーカー、イベント主催者その他の権利者からの削除要請は、
+            <Link href="/contact" className="text-white underline decoration-white/30 underline-offset-4">
+              お問い合わせ・権利侵害に関するお申し立て
+            </Link>
+            ページにて受け付けます。権利者ご本人または正当な代理人からの申告であることを確認した場合、運営は速やかに該当コンテンツの削除または非表示を行います。
           </li>
           <li>
             ユーザーは、運営の削除等の措置に対し、一切の異議を申し立てないものとします。

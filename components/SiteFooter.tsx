@@ -21,6 +21,12 @@ export function SiteFooter() {
         <Link href="/privacy" className="hover:text-white">
           プライバシーポリシー
         </Link>
+        <span aria-hidden="true" className="text-zinc-500">
+          |
+        </span>
+        <Link href="/contact" className="hover:text-white">
+          お問い合わせ・権利侵害窓口
+        </Link>
       </nav>
       <p className="mt-3 text-zinc-400">© D-POP</p>
     </footer>
