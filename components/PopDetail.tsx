@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState, useSyncExternalStore } from "react";
 import { CommentIcon, HeartIcon, HeartOutlineIcon } from "@/components/Icons";
 import { ReportButton } from "@/components/ReportButton";
+import { useAuth } from "@/lib/auth-context";
 import { type Pop } from "@/lib/dummy-pops";
 import {
   addComment,
@@ -11,11 +13,13 @@ import {
   getLikeCount,
   getSocialVersion,
   hasLiked,
+  refreshLiked,
+  startCommentsListener,
   subscribeSocial,
   toggleLike,
 } from "@/lib/social";
 import { findPopById } from "@/lib/pops";
-import { readAuthorName } from "@/lib/user-pops";
+import { canEditPop, getPopsVersion, subscribePops } from "@/lib/user-pops";
 
 function formatTime(value: number) {
   return new Date(value).toLocaleString("ja-JP", {
@@ -28,14 +32,22 @@ function formatTime(value: number) {
 
 export function PopDetail({ popId }: { popId: string }) {
   useSyncExternalStore(subscribeSocial, getSocialVersion, () => 0);
+  const popsVersion = useSyncExternalStore(subscribePops, getPopsVersion, () => 0);
+  const { profile } = useAuth();
+  const router = useRouter();
   const [pop, setPop] = useState<Pop | undefined>(() => findPopById(popId));
   const [draft, setDraft] = useState("");
-  const [me, setMe] = useState("");
+  const [error, setError] = useState("");
 
   useEffect(() => {
     setPop(findPopById(popId));
-    setMe(readAuthorName());
-  }, [popId]);
+  }, [popId, popsVersion]);
+
+  useEffect(() => {
+    const stop = startCommentsListener(popId);
+    void refreshLiked(popId, profile?.uid);
+    return stop;
+  }, [popId, profile?.uid]);
 
   if (!pop) {
     return (
@@ -48,12 +60,34 @@ export function PopDetail({ popId }: { popId: string }) {
   const comments = getComments(pop.id);
   const liked = hasLiked(pop.id);
   const likes = getLikeCount(pop.id);
+  const editable = canEditPop(pop, profile?.uid);
 
-  function onComment(event: FormEvent) {
+  async function onLike() {
+    if (!profile) {
+      router.push(`/login?next=/pops/${encodeURIComponent(popId)}`);
+      return;
+    }
+    try {
+      await toggleLike(popId);
+    } catch {
+      setError("いいねを保存できませんでした");
+    }
+  }
+
+  async function onComment(event: FormEvent) {
     event.preventDefault();
-    if (!pop || !draft.trim()) return;
-    addComment(pop.id, readAuthorName(), draft);
-    setDraft("");
+    if (!draft.trim()) return;
+    if (!profile) {
+      router.push(`/login?next=/pops/${encodeURIComponent(popId)}`);
+      return;
+    }
+    try {
+      await addComment(popId, profile.name, draft);
+      setDraft("");
+      setError("");
+    } catch {
+      setError("コメントを保存できませんでした");
+    }
   }
 
   return (
@@ -71,7 +105,7 @@ export function PopDetail({ popId }: { popId: string }) {
         <div className="flex items-center gap-4">
           <button
             type="button"
-            onClick={() => toggleLike(pop.id)}
+            onClick={() => void onLike()}
             className={`flex items-center gap-1.5 text-sm ${liked ? "text-red-400" : "text-white"}`}
           >
             {liked ? (
@@ -98,7 +132,7 @@ export function PopDetail({ popId }: { popId: string }) {
             >
               {pop.author}
             </Link>
-            {me === pop.author && (
+            {editable && (
               <Link
                 href={`/pops/${encodeURIComponent(pop.id)}/edit`}
                 className="ml-3 text-xs text-zinc-500"
@@ -137,11 +171,11 @@ export function PopDetail({ popId }: { popId: string }) {
               ))
             )}
           </ul>
-          <form onSubmit={onComment} className="mt-4 flex gap-2">
+          <form onSubmit={(event) => void onComment(event)} className="mt-4 flex gap-2">
             <input
               value={draft}
               onChange={(event) => setDraft(event.target.value)}
-              placeholder="コメントを書く"
+              placeholder={profile ? "コメントを書く" : "ログインしてコメント"}
               className="min-w-0 flex-1 rounded-full bg-zinc-900 px-4 py-2 text-sm outline-none ring-1 ring-white/10 focus:ring-2 focus:ring-white/40"
             />
             <button
@@ -151,6 +185,7 @@ export function PopDetail({ popId }: { popId: string }) {
               送信
             </button>
           </form>
+          {error ? <p className="mt-2 text-sm text-red-400">{error}</p> : null}
         </section>
       </div>
     </article>

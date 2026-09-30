@@ -1,4 +1,5 @@
 import { BottomNav } from "@/components/BottomNav";
+import { Providers } from "@/components/Providers";
 import { SiteFooter } from "@/components/SiteFooter";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
@@ -26,9 +27,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-black">
-        {children}
-        <SiteFooter />
-        <BottomNav />
+        <Providers>
+          {children}
+          <SiteFooter />
+          <BottomNav />
+        </Providers>
       </body>
     </html>
   );

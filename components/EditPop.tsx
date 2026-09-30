@@ -1,16 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { PostForm } from "@/components/PostForm";
 import { type Pop } from "@/lib/dummy-pops";
 import { findPopById } from "@/lib/pops";
+import { getPopsVersion, subscribePops } from "@/lib/user-pops";
 
 export function EditPop({ popId }: { popId: string }) {
+  const popsVersion = useSyncExternalStore(subscribePops, getPopsVersion, () => 0);
   const [pop, setPop] = useState<Pop | undefined>(() => findPopById(popId));
 
   useEffect(() => {
     setPop(findPopById(popId));
-  }, [popId]);
+  }, [popId, popsVersion]);
 
   if (!pop) {
     return (

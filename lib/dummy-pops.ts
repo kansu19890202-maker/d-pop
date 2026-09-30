@@ -3,8 +3,11 @@ export type Pop = {
   title: string;
   date: string;
   author: string;
+  authorId?: string;
   image: string;
+  storagePath?: string;
   tags: string[];
+  createdAt?: number;
 };
 
 export const SAMPLE_AUTHOR = "Boomのがんちゃん";

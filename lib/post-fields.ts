@@ -25,7 +25,7 @@ export function normalizeTag(value: string) {
   return value.trim().replace(/^#+/, "").replace(/\s+/g, "");
 }
 
-export async function fileToPreview(file: File): Promise<string> {
+async function drawToCanvas(file: File) {
   const bitmap = await createImageBitmap(file);
   const maxEdge = 1600;
   const scale = Math.min(1, maxEdge / Math.max(bitmap.width, bitmap.height));
@@ -39,5 +39,18 @@ export async function fileToPreview(file: File): Promise<string> {
     throw new Error("preview");
   }
   context.drawImage(bitmap, 0, 0, width, height);
-  return canvas.toDataURL("image/jpeg", 0.82);
+  return canvas;
+}
+
+export async function fileToPreview(file: File): Promise<string> {
+  return (await drawToCanvas(file)).toDataURL("image/jpeg", 0.82);
+}
+
+export async function fileToJpegBlob(file: File): Promise<Blob> {
+  const canvas = await drawToCanvas(file);
+  const blob = await new Promise<Blob | null>((resolve) =>
+    canvas.toBlob((value) => resolve(value), "image/jpeg", 0.82),
+  );
+  if (!blob) throw new Error("preview");
+  return blob;
 }

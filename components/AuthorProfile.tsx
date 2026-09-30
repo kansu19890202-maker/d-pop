@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState, useSyncExternalStore } from "react";
 import { CommentIcon, HeartIcon } from "@/components/Icons";
+import { useAuth } from "@/lib/auth-context";
 import { findPopsByAuthor } from "@/lib/pops";
 import {
   getComments,
@@ -12,26 +14,37 @@ import {
   sendMessage,
   subscribeSocial,
 } from "@/lib/social";
-import { readAuthorName } from "@/lib/user-pops";
+import { canEditPop, getPopsVersion, subscribePops } from "@/lib/user-pops";
 
 export function AuthorProfile({ name }: { name: string }) {
   useSyncExternalStore(subscribeSocial, getSocialVersion, () => 0);
-  const [me, setMe] = useState("");
+  const popsVersion = useSyncExternalStore(subscribePops, getPopsVersion, () => 0);
+  const { profile } = useAuth();
+  const router = useRouter();
   const [pops, setPops] = useState(() => findPopsByAuthor(name));
   const [draft, setDraft] = useState("");
-  const isSelf = me === name;
+  const [error, setError] = useState("");
+  const isSelf = Boolean(profile && profile.name === name);
   const messages = getMessages(name);
 
   useEffect(() => {
-    setMe(readAuthorName());
     setPops(findPopsByAuthor(name));
-  }, [name]);
+  }, [name, popsVersion]);
 
-  function onSend(event: FormEvent) {
+  async function onSend(event: FormEvent) {
     event.preventDefault();
     if (!draft.trim() || isSelf) return;
-    sendMessage(me, name, draft);
-    setDraft("");
+    if (!profile) {
+      router.push(`/login?next=/users/${encodeURIComponent(name)}`);
+      return;
+    }
+    try {
+      await sendMessage(profile.name, name, draft);
+      setDraft("");
+      setError("");
+    } catch {
+      setError("メッセージを送れませんでした");
+    }
   }
 
   return (
@@ -67,7 +80,7 @@ export function AuthorProfile({ name }: { name: string }) {
                 </div>
               </article>
             </Link>
-            {isSelf ? (
+            {canEditPop(pop, profile?.uid) ? (
               <Link
                 href={`/pops/${encodeURIComponent(pop.id)}/edit`}
                 className="mt-1 block text-center text-[10px] text-zinc-500"
@@ -100,7 +113,7 @@ export function AuthorProfile({ name }: { name: string }) {
                 ))
               )}
             </ul>
-            <form onSubmit={onSend} className="flex gap-2">
+            <form onSubmit={(event) => void onSend(event)} className="flex gap-2">
               <input
                 value={draft}
                 onChange={(event) => setDraft(event.target.value)}
@@ -114,6 +127,7 @@ export function AuthorProfile({ name }: { name: string }) {
                 送信
               </button>
             </form>
+            {error ? <p className="mt-2 text-sm text-red-400">{error}</p> : null}
           </>
         )}
       </section>

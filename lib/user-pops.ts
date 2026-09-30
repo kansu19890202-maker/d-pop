@@ -1,12 +1,22 @@
+import {
+  collection,
+  doc,
+  onSnapshot,
+  orderBy,
+  query,
+  setDoc,
+  updateDoc,
+} from "firebase/firestore";
+import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { dummyPops, type Pop } from "@/lib/dummy-pops";
+import { getFirebase } from "@/lib/firebase";
+import { fileToJpegBlob } from "@/lib/post-fields";
 
-const STORAGE_KEY = "dpop-user-posts";
-const AUTHOR_KEY = "dpop-author";
-const OVERRIDES_KEY = "dpop-pop-overrides";
 const POPS_EVENT = "dpop-pops";
 
 export const AUTHOR_MAX_LENGTH = 20;
 
+let remotePops: Pop[] = [];
 let popsVersion = 0;
 
 function emitPopsChange() {
@@ -26,85 +36,104 @@ export function getPopsVersion() {
   return popsVersion;
 }
 
-function readRawUserPops(): Pop[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw) as Pop[];
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
+function docToPop(id: string, data: Record<string, unknown>): Pop {
+  return {
+    id,
+    title: String(data.title ?? ""),
+    date: String(data.date ?? ""),
+    author: String(data.author ?? ""),
+    authorId: data.authorId ? String(data.authorId) : undefined,
+    image: String(data.image ?? ""),
+    storagePath: data.storagePath ? String(data.storagePath) : undefined,
+    tags: Array.isArray(data.tags) ? data.tags.map(String) : [],
+    createdAt: typeof data.createdAt === "number" ? data.createdAt : undefined,
+  };
 }
 
-function readOverrides(): Record<string, Partial<Pop>> {
-  if (typeof window === "undefined") return {};
-  try {
-    const raw = window.localStorage.getItem(OVERRIDES_KEY);
-    if (!raw) return {};
-    const parsed = JSON.parse(raw) as Record<string, Partial<Pop>>;
-    return parsed && typeof parsed === "object" ? parsed : {};
-  } catch {
-    return {};
-  }
-}
-
-function applyOverrides(pop: Pop): Pop {
-  return { ...pop, ...readOverrides()[pop.id] };
-}
-
-export function readUserPops(): Pop[] {
-  return readRawUserPops().map(applyOverrides);
+export function startPopsListener() {
+  const firebase = getFirebase();
+  if (!firebase || typeof window === "undefined") return () => {};
+  return onSnapshot(
+    query(collection(firebase.db, "pops"), orderBy("createdAt", "desc")),
+    (snap) => {
+      remotePops = snap.docs.map((item) =>
+        docToPop(item.id, item.data() as Record<string, unknown>),
+      );
+      emitPopsChange();
+    },
+  );
 }
 
 export function listAllPops(): Pop[] {
-  const users = readUserPops();
-  const userIds = new Set(users.map((pop) => pop.id));
-  const samples = dummyPops
-    .filter((pop) => !userIds.has(pop.id))
-    .map(applyOverrides);
-  return [...users, ...samples];
+  const ids = new Set(remotePops.map((pop) => pop.id));
+  return [...remotePops, ...dummyPops.filter((pop) => !ids.has(pop.id))];
 }
 
-export function saveUserPop(pop: Pop) {
-  window.localStorage.setItem(
-    STORAGE_KEY,
-    JSON.stringify([pop, ...readRawUserPops()]),
-  );
-  emitPopsChange();
+export function readUserPops(): Pop[] {
+  return remotePops;
 }
 
-export function updatePop(
-  id: string,
-  patch: Pick<Pop, "title" | "date" | "image" | "tags">,
+export async function saveUserPop(input: {
+  title: string;
+  date: string;
+  author: string;
+  authorId: string;
+  tags: string[];
+  file: File;
+}) {
+  const firebase = getFirebase();
+  if (!firebase) throw new Error("not-configured");
+  const id = `p${Date.now()}`;
+  const storagePath = `pops/${input.authorId}/${id}.jpg`;
+  const blob = await fileToJpegBlob(input.file);
+  const fileRef = ref(firebase.storage, storagePath);
+  await uploadBytes(fileRef, blob, { contentType: "image/jpeg" });
+  const image = await getDownloadURL(fileRef);
+  const pop: Pop = {
+    id,
+    title: input.title,
+    date: input.date,
+    author: input.author,
+    authorId: input.authorId,
+    image,
+    storagePath,
+    tags: input.tags,
+    createdAt: Date.now(),
+  };
+  await setDoc(doc(firebase.db, "pops", id), pop);
+  return pop;
+}
+
+export async function updatePop(
+  current: Pop,
+  patch: {
+    title: string;
+    date: string;
+    tags: string[];
+    file?: File;
+  },
 ) {
-  const users = readRawUserPops();
-  const index = users.findIndex((pop) => pop.id === id);
-  if (index >= 0) {
-    users[index] = { ...users[index], ...patch };
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(users));
-    emitPopsChange();
-    return;
+  const firebase = getFirebase();
+  if (!firebase || !current.authorId) throw new Error("not-configured");
+  let image = current.image;
+  let storagePath = current.storagePath;
+  if (patch.file) {
+    storagePath = `pops/${current.authorId}/${current.id}.jpg`;
+    const blob = await fileToJpegBlob(patch.file);
+    const fileRef = ref(firebase.storage, storagePath);
+    await uploadBytes(fileRef, blob, { contentType: "image/jpeg" });
+    image = await getDownloadURL(fileRef);
   }
-  const overrides = readOverrides();
-  overrides[id] = { ...overrides[id], ...patch };
-  window.localStorage.setItem(OVERRIDES_KEY, JSON.stringify(overrides));
-  emitPopsChange();
+  await updateDoc(doc(firebase.db, "pops", current.id), {
+    title: patch.title,
+    date: patch.date,
+    tags: patch.tags,
+    image,
+    storagePath,
+    updatedAt: Date.now(),
+  });
 }
 
-export function readAuthorName(): string {
-  if (typeof window === "undefined") return "";
-  const saved = window.localStorage.getItem(AUTHOR_KEY)?.trim() ?? "";
-  if (saved) return saved.slice(0, AUTHOR_MAX_LENGTH);
-  const guest = `ゲスト${Math.floor(1000 + Math.random() * 9000)}`;
-  window.localStorage.setItem(AUTHOR_KEY, guest);
-  return guest;
-}
-
-export function saveAuthorName(name: string) {
-  window.localStorage.setItem(
-    AUTHOR_KEY,
-    name.trim().slice(0, AUTHOR_MAX_LENGTH),
-  );
+export function canEditPop(pop: Pop, uid: string | undefined) {
+  return Boolean(uid && pop.authorId && pop.authorId === uid);
 }

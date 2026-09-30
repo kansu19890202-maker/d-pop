@@ -1,7 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
+import { useAuth } from "@/lib/auth-context";
 import { popularTags, type Pop } from "@/lib/dummy-pops";
 import {
   dateToDigits,
@@ -11,8 +13,7 @@ import {
 } from "@/lib/post-fields";
 import {
   AUTHOR_MAX_LENGTH,
-  readAuthorName,
-  saveAuthorName,
+  canEditPop,
   saveUserPop,
   updatePop,
 } from "@/lib/user-pops";
@@ -23,13 +24,14 @@ type PostFormProps = {
 
 export function PostForm({ initialPop }: PostFormProps) {
   const router = useRouter();
+  const { loading, profile, configured } = useAuth();
   const editing = Boolean(initialPop);
   const [title, setTitle] = useState(initialPop?.title ?? "");
   const [date, setDate] = useState(
     initialPop ? dateToDigits(initialPop.date) : "",
   );
-  const [author, setAuthor] = useState(initialPop?.author ?? "");
   const [image, setImage] = useState<string | null>(initialPop?.image ?? null);
+  const [file, setFile] = useState<File | undefined>();
   const [fileName, setFileName] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>(
     initialPop?.tags.filter((tag) => popularTags.includes(tag)) ?? [],
@@ -43,21 +45,17 @@ export function PostForm({ initialPop }: PostFormProps) {
   const [forbidden, setForbidden] = useState(false);
 
   useEffect(() => {
-    if (initialPop) {
-      if (readAuthorName() !== initialPop.author) {
-        setForbidden(true);
-      }
-      return;
-    }
-    setAuthor(readAuthorName());
-  }, [initialPop]);
+    if (!initialPop || loading) return;
+    setForbidden(!canEditPop(initialPop, profile?.uid));
+  }, [initialPop, loading, profile?.uid]);
 
-  async function onFileChange(file: File | undefined) {
-    if (!file) return;
+  async function onFileChange(next: File | undefined) {
+    if (!next) return;
     setError("");
-    setFileName(file.name);
+    setFileName(next.name);
+    setFile(next);
     try {
-      const preview = await fileToPreview(file);
+      const preview = await fileToPreview(next);
       setImage(preview);
     } catch {
       setError("画像を読み込めませんでした");
@@ -91,10 +89,17 @@ export function PostForm({ initialPop }: PostFormProps) {
     setCustomTags((current) => current.filter((item) => item !== tag));
   }
 
-  function onSubmit(event: FormEvent) {
+  async function onSubmit(event: FormEvent) {
     event.preventDefault();
     const formattedDate = parseEightDigitDate(date);
-    const authorName = author.trim();
+    if (!configured) {
+      setError("保存先の接続後に投稿できます");
+      return;
+    }
+    if (!profile) {
+      router.push("/login?next=/post");
+      return;
+    }
     if (!image) {
       setError("POP画像を選んでください");
       return;
@@ -107,37 +112,61 @@ export function PostForm({ initialPop }: PostFormProps) {
       setError("日付は 20260909 のように8桁の数字で入力してください");
       return;
     }
-    if (!editing && !authorName) {
-      setError("投稿者名を入力してください");
-      return;
-    }
 
     setBusy(true);
+    setError("");
     const tags = [...selectedTags, ...customTags];
-    if (editing && initialPop) {
-      updatePop(initialPop.id, {
+    try {
+      if (editing && initialPop) {
+        await updatePop(initialPop, {
+          title: title.trim(),
+          date: formattedDate,
+          tags,
+          file,
+        });
+        router.push(`/pops/${encodeURIComponent(initialPop.id)}`);
+        router.refresh();
+        return;
+      }
+      if (!file) {
+        setError("POP画像を選んでください");
+        setBusy(false);
+        return;
+      }
+      const pop = await saveUserPop({
         title: title.trim(),
         date: formattedDate,
-        image,
+        author: profile.name,
+        authorId: profile.uid,
         tags,
+        file,
       });
-      router.push(`/pops/${encodeURIComponent(initialPop.id)}`);
+      router.push(`/pops/${encodeURIComponent(pop.id)}`);
       router.refresh();
-      return;
+    } catch {
+      setError("保存できませんでした。画像サイズや通信環境を確認してください");
+      setBusy(false);
     }
+  }
 
-    saveAuthorName(authorName);
-    const pop: Pop = {
-      id: `user-${Date.now()}`,
-      title: title.trim(),
-      date: formattedDate,
-      author: authorName,
-      image,
-      tags,
-    };
-    saveUserPop(pop);
-    router.push("/");
-    router.refresh();
+  if (loading) {
+    return <div className="px-4 py-16" />;
+  }
+
+  if (!profile) {
+    return (
+      <div className="px-4 py-16 text-center text-sm text-zinc-400">
+        <p>投稿するにはログインが必要です</p>
+        <p className="mt-4 flex justify-center gap-3">
+          <Link href="/login?next=/post" className="text-white underline">
+            ログイン
+          </Link>
+          <Link href="/register" className="text-white underline">
+            新規登録
+          </Link>
+        </p>
+      </div>
+    );
   }
 
   if (forbidden) {
@@ -208,25 +237,12 @@ export function PostForm({ initialPop }: PostFormProps) {
         </span>
       </label>
 
-      {editing ? (
-        <p className="text-sm text-zinc-400">投稿者：{initialPop?.author}</p>
-      ) : (
-        <label className="block">
-          <span className="mb-2 block text-sm text-zinc-300">投稿者</span>
-          <input
-            value={author}
-            maxLength={AUTHOR_MAX_LENGTH}
-            onChange={(event) =>
-              setAuthor(event.target.value.slice(0, AUTHOR_MAX_LENGTH))
-            }
-            className="w-full rounded-lg bg-zinc-900 px-3 py-2 text-sm outline-none ring-1 ring-white/10 focus:ring-2 focus:ring-white/40"
-          />
-          <span className="mt-1 block text-xs text-zinc-500">
-            {author.length}/{AUTHOR_MAX_LENGTH}
-            ・サンプル作品と同じ「Boomのがんちゃん」が自動で入ります
-          </span>
-        </label>
-      )}
+      <p className="text-sm text-zinc-400">
+        投稿者：{editing ? initialPop?.author : profile.name}
+        <span className="mt-1 block text-xs text-zinc-500">
+          表示名はマイページで変更できます（{AUTHOR_MAX_LENGTH}文字まで）
+        </span>
+      </p>
 
       <fieldset>
         <legend className="mb-2 text-sm text-zinc-300">タグ</legend>
