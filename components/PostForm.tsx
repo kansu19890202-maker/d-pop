@@ -11,6 +11,7 @@ import {
   normalizeTag,
   parseEightDigitDate,
 } from "@/lib/post-fields";
+import { PREFECTURES } from "@/lib/regions";
 import { TAG_ROW, TAG_ROW_COMPACT, rankPopularTags, tagsForOneRow } from "@/lib/tags";
 import {
   AUTHOR_MAX_LENGTH,
@@ -47,6 +48,9 @@ export function PostForm({
   const [fileName, setFileName] = useState("");
   const popsVersion = useSyncExternalStore(subscribePops, getPopsVersion, () => 0);
   const [chosenTags, setChosenTags] = useState<string[]>(initialPop?.tags ?? []);
+  const [prefecture, setPrefecture] = useState(
+    initialPop?.prefecture ?? profile?.prefecture ?? "",
+  );
   const [tagDraft, setTagDraft] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -129,6 +133,7 @@ export function PostForm({
           title: title.trim(),
           date: formattedDate,
           tags,
+          prefecture: prefecture || undefined,
           file,
         });
         if (onSaved) {
@@ -151,6 +156,7 @@ export function PostForm({
         authorId: profile.uid,
         tags,
         file,
+        prefecture: prefecture || undefined,
       });
       router.push(`/pops/${encodeURIComponent(pop.id)}`);
       router.refresh();
@@ -260,6 +266,22 @@ export function PostForm({
         <span className="mt-1 block text-xs text-zinc-500">
           8桁の数字で入力（例: 20260909）
         </span>
+      </label>
+
+      <label className="block">
+        <span className="mb-2 block text-sm text-zinc-300">エリア</span>
+        <select
+          value={prefecture}
+          onChange={(event) => setPrefecture(event.target.value)}
+          className="w-full rounded-lg bg-zinc-900 px-3 py-2 text-sm outline-none ring-1 ring-white/10 focus:ring-2 focus:ring-white/40"
+        >
+          <option value="">未設定</option>
+          {PREFECTURES.map((area) => (
+            <option key={area} value={area}>
+              {area}
+            </option>
+          ))}
+        </select>
       </label>
 
       <p className="text-sm text-zinc-400">

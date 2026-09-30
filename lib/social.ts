@@ -1,10 +1,12 @@
 import {
   addDoc,
   collection,
+  deleteDoc,
   doc,
   onSnapshot,
   runTransaction,
   serverTimestamp,
+  setDoc,
 } from "firebase/firestore";
 import { getFirebase } from "@/lib/firebase";
 
@@ -29,6 +31,7 @@ type SocialState = {
   likes: Record<string, number>;
   views: Record<string, number>;
   liked: Record<string, boolean>;
+  bookmarks: Record<string, boolean>;
   comments: Record<string, SocialComment[]>;
   messages: Record<string, SocialMessage[]>;
 };
@@ -283,6 +286,7 @@ let memory: SocialState = {
   likes: { ...seedLikes },
   views: { ...seedViews },
   liked: {},
+  bookmarks: {},
   comments: Object.fromEntries(
     Object.entries(seedComments).map(([id, list]) => [id, [...list]]),
   ),
@@ -468,6 +472,49 @@ export async function toggleLike(popId: string) {
     return true;
   });
   setLiked(popId, nextLiked);
+}
+
+export function clearBookmarks() {
+  memory = { ...memory, bookmarks: {} };
+  bump();
+}
+
+export function startBookmarksListener(uid: string) {
+  const firebase = getFirebase();
+  if (!firebase || typeof window === "undefined") return () => {};
+  return onSnapshot(
+    collection(firebase.db, "users", uid, "bookmarks"),
+    (snap) => {
+      const bookmarks: Record<string, boolean> = {};
+      for (const item of snap.docs) bookmarks[item.id] = true;
+      memory = { ...memory, bookmarks };
+      bump();
+    },
+    () => {
+      memory = { ...memory, bookmarks: {} };
+      bump();
+    },
+  );
+}
+
+export function hasBookmarked(popId: string) {
+  return Boolean(memory.bookmarks[popId]);
+}
+
+export function listBookmarkIds() {
+  return Object.keys(memory.bookmarks);
+}
+
+export async function toggleBookmark(popId: string) {
+  const firebase = getFirebase();
+  const uid = firebase?.auth.currentUser?.uid;
+  if (!firebase || !uid) throw new Error("login");
+  const bookmarkRef = doc(firebase.db, "users", uid, "bookmarks", popId);
+  if (memory.bookmarks[popId]) {
+    await deleteDoc(bookmarkRef);
+    return;
+  }
+  await setDoc(bookmarkRef, { createdAt: serverTimestamp() });
 }
 
 export function getComments(popId: string): SocialComment[] {

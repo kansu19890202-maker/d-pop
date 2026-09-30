@@ -8,9 +8,11 @@ export type Pop = {
   storagePath?: string;
   tags: string[];
   createdAt?: number;
+  prefecture?: string;
 };
 
 export const SAMPLE_AUTHOR = "Boomのがんちゃん";
+export const SAMPLE_AREA = "千葉";
 
 export const popularTags = [
   "2026",
@@ -358,3 +360,7 @@ export const dummyPops: Pop[] = [
     tags: ["2024", "チラシ", "告知"],
   },
 ];
+
+for (const pop of dummyPops) {
+  pop.prefecture ??= SAMPLE_AREA;
+}

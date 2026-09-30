@@ -20,12 +20,17 @@ import {
 import { doc, getDoc, serverTimestamp, setDoc, updateDoc } from "firebase/firestore";
 import { getFirebase, isFirebaseConfigured } from "@/lib/firebase";
 import { AUTHOR_MAX_LENGTH, startPopsListener } from "@/lib/user-pops";
-import { startSocialListener } from "@/lib/social";
+import { clearBookmarks, startBookmarksListener, startSocialListener } from "@/lib/social";
+import { startProfilesListener } from "@/lib/profiles";
 
 export type AuthProfile = {
   uid: string;
   email: string;
   name: string;
+  instagram: string;
+  x: string;
+  prefecture: string;
+  storeUrl: string;
 };
 
 type AuthContextValue = {
@@ -38,6 +43,12 @@ type AuthContextValue = {
   logout: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   updateName: (name: string) => Promise<void>;
+  updatePublicProfile: (input: {
+    instagram: string;
+    x: string;
+    prefecture: string;
+    storeUrl: string;
+  }) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -79,11 +90,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const stopPops = startPopsListener();
     const stopSocial = startSocialListener();
+    const stopProfiles = startProfilesListener();
     if (!configured) {
       setLoading(false);
       return () => {
         stopPops();
         stopSocial();
+        stopProfiles();
       };
     }
     const firebase = getFirebase();
@@ -92,20 +105,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return () => {
         stopPops();
         stopSocial();
+        stopProfiles();
       };
     }
+    let stopBookmarks = () => {};
     const unsub = onAuthStateChanged(firebase.auth, async (next) => {
+      stopBookmarks();
+      stopBookmarks = () => {};
       setUser(next);
       if (!next) {
+        clearBookmarks();
         setProfile(null);
         setLoading(false);
         return;
       }
+      stopBookmarks = startBookmarksListener(next.uid);
       const snap = await getDoc(doc(firebase.db, "users", next.uid));
+      const data = snap.exists() ? snap.data() : {};
       const name =
-        (snap.exists() ? String(snap.data().name ?? "") : "") ||
-        next.displayName ||
-        "ゲスト";
+        String(data.name ?? "") || next.displayName || "ゲスト";
       if (!snap.exists()) {
         await setDoc(doc(firebase.db, "users", next.uid), {
           name: name.slice(0, AUTHOR_MAX_LENGTH),
@@ -117,13 +135,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         uid: next.uid,
         email: next.email ?? "",
         name: name.slice(0, AUTHOR_MAX_LENGTH),
+        instagram: String(data.instagram ?? ""),
+        x: String(data.x ?? ""),
+        prefecture: String(data.prefecture ?? ""),
+        storeUrl: String(data.storeUrl ?? ""),
       });
       setLoading(false);
     });
     return () => {
       unsub();
+      stopBookmarks();
       stopPops();
       stopSocial();
+      stopProfiles();
     };
   }, [configured]);
 
@@ -147,6 +171,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await setDoc(doc(firebase.db, "users", cred.user.uid), {
           name: trimmed,
           email: cred.user.email ?? email.trim(),
+          instagram: "",
+          x: "",
+          prefecture: "",
+          storeUrl: "",
           createdAt: serverTimestamp(),
         });
       },
@@ -174,6 +202,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await updateProfile(current, { displayName: trimmed });
         await updateDoc(doc(firebase.db, "users", current.uid), { name: trimmed });
         setProfile((prev) => (prev ? { ...prev, name: trimmed } : prev));
+      },
+      async updatePublicProfile(input) {
+        const firebase = getFirebase();
+        const current = firebase?.auth.currentUser;
+        if (!firebase || !current) throw new Error("not-configured");
+        const next = {
+          instagram: input.instagram.trim().slice(0, 80),
+          x: input.x.trim().slice(0, 80),
+          prefecture: input.prefecture.trim().slice(0, 8),
+          storeUrl: input.storeUrl.trim().slice(0, 200),
+        };
+        await updateDoc(doc(firebase.db, "users", current.uid), next);
+        setProfile((prev) => (prev ? { ...prev, ...next } : prev));
       },
     }),
     [configured, hydrated, loading, user, profile],

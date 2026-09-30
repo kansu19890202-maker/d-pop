@@ -49,10 +49,29 @@ function popTimestamp(pop: Pop) {
   ) || 0;
 }
 
+function eventTime(pop: Pop) {
+  const digits = pop.date.replace(/\D/g, "").padEnd(8, "01").slice(0, 8);
+  return (
+    Date.parse(
+      `${digits.slice(0, 4)}-${digits.slice(4, 6)}-${digits.slice(6, 8)}`,
+    ) || 0
+  );
+}
+
+function startOfToday() {
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  return now.getTime();
+}
+
 export function Gallery({ pops }: GalleryProps) {
   const [query, setQuery] = useState("");
   const [activeTag, setActiveTag] = useState<string | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>("newest");
+  const [when, setWhen] = useState<"all" | "upcoming" | "archive">("all");
+  const [area, setArea] = useState("all");
+  const [today, setToday] = useState<number | null>(null);
+  const [monthKey, setMonthKey] = useState("");
   useSyncExternalStore(subscribeSocial, getSocialVersion, () => 0);
   const popsVersion = useSyncExternalStore(subscribePops, getPopsVersion, () => 0);
   const [allPops, setAllPops] = useState<Pop[]>(pops);
@@ -61,21 +80,49 @@ export function Gallery({ pops }: GalleryProps) {
     setAllPops(listAllPops());
   }, [pops, popsVersion]);
 
+  useEffect(() => {
+    setToday(startOfToday());
+    const now = new Date();
+    setMonthKey(`${now.getFullYear()}.${String(now.getMonth() + 1).padStart(2, "0")}`);
+  }, []);
+
   const tagChips = useMemo(() => {
     return tagsForOneRow(rankPopularTags(allPops), activeTag ? [activeTag] : [], TAG_ROW);
   }, [allPops, activeTag]);
+
+  const areas = useMemo(() => {
+    return [...new Set(allPops.map((pop) => pop.prefecture).filter(Boolean))] as string[];
+  }, [allPops]);
+
+  const monthlyHits = useMemo(() => {
+    if (!monthKey) return [];
+    return [...allPops]
+      .filter((pop) => pop.date.startsWith(monthKey))
+      .sort((a, b) => getLikeCount(b.id) - getLikeCount(a.id))
+      .slice(0, 3);
+  }, [allPops, monthKey]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     const next = allPops.filter((pop) => {
       const matchesTag = !activeTag || pop.tags.includes(activeTag);
+      const matchesArea = area === "all" || pop.prefecture === area;
+      const event = eventTime(pop);
+      const matchesWhen =
+        today === null ||
+        when === "all" ||
+        (when === "upcoming" && event >= today) ||
+        (when === "archive" && event < today);
       const matchesQuery =
         !q ||
         pop.title.toLowerCase().includes(q) ||
         pop.date.toLowerCase().includes(q) ||
         pop.author.toLowerCase().includes(q) ||
+        (pop.prefecture ?? "").includes(q) ||
         pop.tags.some((tag) => tag.toLowerCase().includes(q));
-      if (!matchesTag || !matchesQuery) return false;
+      if (!matchesTag || !matchesQuery || !matchesArea || !matchesWhen) {
+        return false;
+      }
       if (sortKey === "commented") return getComments(pop.id).length > 0;
       if (sortKey === "popular") return getLikeCount(pop.id) >= 50;
       return true;
@@ -91,7 +138,7 @@ export function Gallery({ pops }: GalleryProps) {
       return popTimestamp(b) - popTimestamp(a);
     });
     return next;
-  }, [allPops, query, activeTag, sortKey]);
+  }, [allPops, query, activeTag, sortKey, when, area, today]);
 
   return (
     <div className="min-h-full bg-black pb-24 text-white">
@@ -184,7 +231,30 @@ export function Gallery({ pops }: GalleryProps) {
       </header>
 
       <main className="mx-auto max-w-5xl">
-        <div className="flex justify-end px-2 pt-2 md:px-3 md:pt-3">
+        <div className="flex flex-wrap items-center justify-end gap-2 px-2 pt-2 md:px-3 md:pt-3">
+          <select
+            value={when}
+            onChange={(event) =>
+              setWhen(event.target.value as "all" | "upcoming" | "archive")
+            }
+            className="rounded-full bg-zinc-900 py-1.5 pl-3 pr-8 text-xs text-white outline-none ring-1 ring-white/10 focus:ring-2 focus:ring-white/40"
+          >
+            <option value="all">開催時期：すべて</option>
+            <option value="upcoming">これから</option>
+            <option value="archive">終了したイベント</option>
+          </select>
+          <select
+            value={area}
+            onChange={(event) => setArea(event.target.value)}
+            className="rounded-full bg-zinc-900 py-1.5 pl-3 pr-8 text-xs text-white outline-none ring-1 ring-white/10 focus:ring-2 focus:ring-white/40"
+          >
+            <option value="all">エリア：すべて</option>
+            {areas.map((item) => (
+              <option key={item} value={item}>
+                {item}
+              </option>
+            ))}
+          </select>
           <label className="flex items-center gap-2 text-xs text-zinc-400">
             <span className="hidden sm:inline">並び替え</span>
             <select
@@ -215,6 +285,30 @@ export function Gallery({ pops }: GalleryProps) {
             </select>
           </label>
         </div>
+        {monthlyHits.length > 0 ? (
+          <div className="px-2 pt-3 md:px-3">
+            <p className="mb-2 text-xs text-zinc-400">今月の人気</p>
+            <ul className="grid grid-cols-3 gap-2">
+              {monthlyHits.map((pop) => (
+                <li key={`hit-${pop.id}`}>
+                  <Link href={`/pops/${encodeURIComponent(pop.id)}`} className="block">
+                    <article className="relative aspect-[210/297] overflow-hidden rounded-sm bg-zinc-950 ring-1 ring-white/10">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={pop.image}
+                        alt={pop.title}
+                        className="size-full object-contain"
+                      />
+                    </article>
+                    <p className="mt-1 truncate text-[10px] text-zinc-300">
+                      {pop.title}
+                    </p>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
         {filtered.length === 0 ? (
           <p className="px-4 py-16 text-center text-sm text-zinc-400">
             条件に一致するPOPはありません
@@ -238,6 +332,7 @@ export function Gallery({ pops }: GalleryProps) {
                       </p>
                       <p className="truncate text-[10px] text-zinc-300 sm:text-xs">
                         {pop.date}
+                        {pop.prefecture ? ` · ${pop.prefecture}` : ""}
                       </p>
                       <p className="truncate text-[10px] text-zinc-400 sm:text-xs">
                         {pop.author}

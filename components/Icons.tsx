@@ -51,3 +51,25 @@ export function CommentIcon({ className = "size-3.5" }: { className?: string }) 
     </svg>
   );
 }
+
+export function BookmarkIcon({ className = "size-3.5" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="currentColor">
+      <path d="M6 3.5A1.5 1.5 0 0 0 4.5 5v16.2l7.5-4.2 7.5 4.2V5A1.5 1.5 0 0 0 18 3.5z" />
+    </svg>
+  );
+}
+
+export function BookmarkOutlineIcon({ className = "size-6" }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+    >
+      <path d="M6.5 4.5h11A1 1 0 0 1 18.5 5.5v15l-6.5-3.6-6.5 3.6V5.5a1 1 0 0 1 1-1z" />
+    </svg>
+  );
+}

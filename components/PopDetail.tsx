@@ -3,9 +3,10 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState, useSyncExternalStore } from "react";
-import { CommentIcon, EyeIcon, HeartIcon, HeartOutlineIcon } from "@/components/Icons";
+import { BookmarkIcon, BookmarkOutlineIcon, CommentIcon, EyeIcon, HeartIcon, HeartOutlineIcon } from "@/components/Icons";
 import { ReportButton } from "@/components/ReportButton";
 import { EditPopDialog } from "@/components/EditPopDialog";
+import { CreditLinks } from "@/components/CreditLinks";
 import { UseNotice } from "@/components/UseNotice";
 import { useAuth } from "@/lib/auth-context";
 import { type Pop } from "@/lib/dummy-pops";
@@ -16,12 +17,15 @@ import {
   getSocialVersion,
   getViewCount,
   hasLiked,
+  hasBookmarked,
   refreshLiked,
   startCommentsListener,
   subscribeSocial,
+  toggleBookmark,
   toggleLike,
 } from "@/lib/social";
 import { findPopById } from "@/lib/pops";
+import { findProfileByName, findProfileByUid, getProfilesVersion, subscribeProfiles } from "@/lib/profiles";
 import { canEditPop, getPopsVersion, subscribePops } from "@/lib/user-pops";
 
 function formatTime(value: number) {
@@ -35,6 +39,7 @@ function formatTime(value: number) {
 
 export function PopDetail({ popId }: { popId: string }) {
   useSyncExternalStore(subscribeSocial, getSocialVersion, () => 0);
+  useSyncExternalStore(subscribeProfiles, getProfilesVersion, () => 0);
   const popsVersion = useSyncExternalStore(subscribePops, getPopsVersion, () => 0);
   const { profile } = useAuth();
   const router = useRouter();
@@ -63,9 +68,12 @@ export function PopDetail({ popId }: { popId: string }) {
 
   const comments = getComments(pop.id);
   const liked = hasLiked(pop.id);
+  const saved = hasBookmarked(pop.id);
   const likes = getLikeCount(pop.id);
   const views = getViewCount(pop.id);
   const editable = canEditPop(pop, profile?.uid);
+  const authorProfile =
+    findProfileByUid(pop.authorId) ?? findProfileByName(pop.author);
 
   async function onLike() {
     if (!profile) {
@@ -76,6 +84,18 @@ export function PopDetail({ popId }: { popId: string }) {
       await toggleLike(popId);
     } catch {
       setError("いいねを保存できませんでした");
+    }
+  }
+
+  async function onBookmark() {
+    if (!profile) {
+      router.push(`/login?next=/pops/${encodeURIComponent(popId)}`);
+      return;
+    }
+    try {
+      await toggleBookmark(popId);
+    } catch {
+      setError("ブックマークを保存できませんでした");
     }
   }
 
@@ -121,6 +141,18 @@ export function PopDetail({ popId }: { popId: string }) {
             )}
             {likes}
           </button>
+          <button
+            type="button"
+            onClick={() => void onBookmark()}
+            className={`flex items-center gap-1.5 text-sm ${saved ? "text-white" : "text-zinc-400"}`}
+          >
+            {saved ? (
+              <BookmarkIcon className="size-5" />
+            ) : (
+              <BookmarkOutlineIcon className="size-5" />
+            )}
+            <span className="text-xs">{saved ? "保存済" : "保存"}</span>
+          </button>
           <span className="flex items-center gap-1.5 text-sm text-zinc-300">
             <CommentIcon className="size-6" />
             {comments.length}
@@ -134,7 +166,10 @@ export function PopDetail({ popId }: { popId: string }) {
 
         <div>
           <h1 className="text-lg font-bold">{pop.title}</h1>
-          <p className="mt-1 text-sm text-zinc-400">{pop.date}</p>
+          <p className="mt-1 text-sm text-zinc-400">
+            {pop.date}
+            {pop.prefecture ? ` · ${pop.prefecture}` : ""}
+          </p>
           <p className="mt-1">
             <Link
               href={`/users/${encodeURIComponent(pop.author)}`}
@@ -160,6 +195,7 @@ export function PopDetail({ popId }: { popId: string }) {
               </Link>
             ) : null}
           </p>
+          <CreditLinks profile={authorProfile} area={pop.prefecture} />
         </div>
 
         {pop.tags.length > 0 ? (

@@ -7,7 +7,7 @@ import {
   type UpdateData,
 } from "firebase/firestore";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
-import { dummyPops, type Pop } from "@/lib/dummy-pops";
+import { dummyPops, SAMPLE_AREA, SAMPLE_AUTHOR, type Pop } from "@/lib/dummy-pops";
 import { getFirebase } from "@/lib/firebase";
 import { fileToJpegBlob } from "@/lib/post-fields";
 
@@ -46,6 +46,7 @@ function docToPop(id: string, data: Record<string, unknown>): Pop {
     storagePath: data.storagePath ? String(data.storagePath) : undefined,
     tags: Array.isArray(data.tags) ? data.tags.map(String) : [],
     createdAt: typeof data.createdAt === "number" ? data.createdAt : undefined,
+    prefecture: data.prefecture ? String(data.prefecture) : undefined,
   };
 }
 
@@ -64,9 +65,22 @@ export function startPopsListener() {
   );
 }
 
+const dummyIds = new Set(dummyPops.map((pop) => pop.id));
+
+function withArea(pop: Pop): Pop {
+  if (pop.prefecture) return pop;
+  if (dummyIds.has(pop.id) || pop.author === SAMPLE_AUTHOR) {
+    return { ...pop, prefecture: SAMPLE_AREA };
+  }
+  return pop;
+}
+
 export function listAllPops(): Pop[] {
   const ids = new Set(remotePops.map((pop) => pop.id));
-  return [...remotePops, ...dummyPops.filter((pop) => !ids.has(pop.id))];
+  return [
+    ...remotePops.map(withArea),
+    ...dummyPops.filter((pop) => !ids.has(pop.id)).map(withArea),
+  ];
 }
 
 export function readUserPops(): Pop[] {
@@ -80,6 +94,7 @@ export async function saveUserPop(input: {
   authorId: string;
   tags: string[];
   file: File;
+  prefecture?: string;
 }) {
   const firebase = getFirebase();
   if (!firebase) throw new Error("not-configured");
@@ -100,6 +115,7 @@ export async function saveUserPop(input: {
     tags: input.tags,
     createdAt: Date.now(),
   };
+  if (input.prefecture) pop.prefecture = input.prefecture;
   await setDoc(doc(firebase.db, "pops", id), pop);
   return pop;
 }
@@ -110,6 +126,7 @@ export async function updatePop(
     title: string;
     date: string;
     tags: string[];
+    prefecture?: string;
     file?: File;
   },
 ) {
@@ -131,6 +148,7 @@ export async function updatePop(
     image,
     updatedAt: Date.now(),
   };
+  if (patch.prefecture) next.prefecture = patch.prefecture;
   if (storagePath) next.storagePath = storagePath;
   await updateDoc(
     doc(firebase.db, "pops", current.id),

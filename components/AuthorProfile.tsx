@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { CommentIcon, HeartIcon } from "@/components/Icons";
+import { CreditLinks } from "@/components/CreditLinks";
 import { EditPopDialog } from "@/components/EditPopDialog";
 import { RequestForm } from "@/components/RequestForm";
 import { useAuth } from "@/lib/auth-context";
@@ -16,6 +17,11 @@ import {
   subscribeSocial,
 } from "@/lib/social";
 import { canEditPop, getPopsVersion, subscribePops } from "@/lib/user-pops";
+import {
+  findProfileByName,
+  getProfilesVersion,
+  subscribeProfiles,
+} from "@/lib/profiles";
 
 export function AuthorProfile({
   name,
@@ -25,6 +31,7 @@ export function AuthorProfile({
   fromPopId?: string;
 }) {
   useSyncExternalStore(subscribeSocial, getSocialVersion, () => 0);
+  useSyncExternalStore(subscribeProfiles, getProfilesVersion, () => 0);
   const popsVersion = useSyncExternalStore(subscribePops, getPopsVersion, () => 0);
   const { profile } = useAuth();
   const [pops, setPops] = useState(() => findPopsByAuthor(name));
@@ -32,6 +39,7 @@ export function AuthorProfile({
   const isSelf = Boolean(profile && profile.name === name);
   const messages = getMessages(name);
   const fromPop = fromPopId ? findPopById(fromPopId) : undefined;
+  const publicProfile = findProfileByName(name);
 
   useEffect(() => {
     setPops(findPopsByAuthor(name));
@@ -41,6 +49,10 @@ export function AuthorProfile({
     <div className="mx-auto max-w-xl px-4 py-6">
       <h1 className="text-xl font-bold">{name}</h1>
       <p className="mt-1 text-sm text-zinc-400">{pops.length}件のPOP</p>
+      <CreditLinks
+        profile={publicProfile}
+        area={pops.find((pop) => pop.prefecture)?.prefecture}
+      />
       {isSelf ? (
         <p className="mt-2 text-xs text-zinc-500">
           届いた依頼は下に表示されます。作品の修正は各画像の「投稿内容を修正」からできます。
