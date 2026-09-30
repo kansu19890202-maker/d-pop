@@ -20,7 +20,7 @@ type SocialState = {
   messages: Record<string, SocialMessage[]>;
 };
 
-const STORAGE_KEY = "dpop-social";
+const STORAGE_KEY = "dpop-social-v2";
 const EVENT = "dpop-social";
 
 const seedLikes: Record<string, number> = {
@@ -92,10 +92,11 @@ function loadState(): SocialState {
       return memory;
     }
     const parsed = JSON.parse(raw) as Partial<SocialState>;
+    const seededComments = emptyState().comments;
     memory = {
       likes: { ...seedLikes, ...parsed.likes },
       liked: parsed.liked ?? {},
-      comments: { ...emptyState().comments, ...parsed.comments },
+      comments: mergeComments(seededComments, parsed.comments ?? {}),
       messages: parsed.messages ?? {},
     };
     return memory;
@@ -103,6 +104,21 @@ function loadState(): SocialState {
     memory = emptyState();
     return memory;
   }
+}
+
+function mergeComments(
+  seeds: Record<string, SocialComment[]>,
+  stored: Record<string, SocialComment[]>,
+): Record<string, SocialComment[]> {
+  const ids = new Set([...Object.keys(seeds), ...Object.keys(stored)]);
+  const next: Record<string, SocialComment[]> = {};
+  for (const id of ids) {
+    const byId = new Map<string, SocialComment>();
+    for (const comment of seeds[id] ?? []) byId.set(comment.id, comment);
+    for (const comment of stored[id] ?? []) byId.set(comment.id, comment);
+    next[id] = [...byId.values()].sort((a, b) => a.createdAt - b.createdAt);
+  }
+  return next;
 }
 
 function persist() {
@@ -123,7 +139,10 @@ export function getSocialVersion() {
 }
 
 export function getLikeCount(popId: string) {
-  return loadState().likes[popId] ?? 0;
+  const stored = loadState().likes[popId];
+  const seeded = seedLikes[popId] ?? 0;
+  if (typeof stored !== "number") return seeded;
+  return Math.max(seeded, stored);
 }
 
 export function hasLiked(popId: string) {

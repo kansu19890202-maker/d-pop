@@ -1,4 +1,4 @@
-import { dummyPops, SAMPLE_AUTHOR, type Pop } from "@/lib/dummy-pops";
+import { dummyPops, type Pop } from "@/lib/dummy-pops";
 
 const STORAGE_KEY = "dpop-user-posts";
 const AUTHOR_KEY = "dpop-author";
@@ -96,11 +96,10 @@ export function updatePop(
 export function readAuthorName(): string {
   if (typeof window === "undefined") return "";
   const saved = window.localStorage.getItem(AUTHOR_KEY)?.trim() ?? "";
-  if (!saved || saved.startsWith("ゲスト")) {
-    window.localStorage.setItem(AUTHOR_KEY, SAMPLE_AUTHOR);
-    return SAMPLE_AUTHOR;
-  }
-  return saved.slice(0, AUTHOR_MAX_LENGTH);
+  if (saved) return saved.slice(0, AUTHOR_MAX_LENGTH);
+  const guest = `ゲスト${Math.floor(1000 + Math.random() * 9000)}`;
+  window.localStorage.setItem(AUTHOR_KEY, guest);
+  return guest;
 }
 
 export function saveAuthorName(name: string) {
