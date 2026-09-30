@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { CommentIcon, EyeIcon, HeartIcon } from "@/components/Icons";
-import { popularTags, type Pop } from "@/lib/dummy-pops";
+import { TAG_ROW, rankPopularTags, tagsForOneRow } from "@/lib/tags";
+import { type Pop } from "@/lib/dummy-pops";
 import {
   getComments,
   getLikeCount,
@@ -61,13 +62,8 @@ export function Gallery({ pops }: GalleryProps) {
   }, [pops, popsVersion]);
 
   const tagChips = useMemo(() => {
-    const extras = new Set<string>();
-    for (const pop of allPops) {
-      for (const tag of pop.tags) extras.add(tag);
-    }
-    const rest = [...extras].filter((tag) => !popularTags.includes(tag)).sort();
-    return [...popularTags, ...rest];
-  }, [allPops]);
+    return tagsForOneRow(rankPopularTags(allPops), activeTag ? [activeTag] : [], TAG_ROW);
+  }, [allPops, activeTag]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -159,7 +155,7 @@ export function Gallery({ pops }: GalleryProps) {
           </label>
         </div>
         <div className="mx-auto max-w-5xl border-t border-white/10">
-          <div className="flex gap-2 overflow-x-auto px-3 py-2.5 scrollbar-none sm:px-4">
+          <div className="flex flex-nowrap gap-2 overflow-hidden px-3 py-2.5 sm:px-4">
             {tagChips.map((tag) => {
               const selected = activeTag === tag;
               return (

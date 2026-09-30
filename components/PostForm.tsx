@@ -2,19 +2,23 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { useAuth } from "@/lib/auth-context";
-import { popularTags, type Pop } from "@/lib/dummy-pops";
+import { type Pop } from "@/lib/dummy-pops";
 import {
   dateToDigits,
   fileToPreview,
   normalizeTag,
   parseEightDigitDate,
 } from "@/lib/post-fields";
+import { TAG_ROW, TAG_ROW_COMPACT, rankPopularTags, tagsForOneRow } from "@/lib/tags";
 import {
   AUTHOR_MAX_LENGTH,
   canEditPop,
+  getPopsVersion,
+  listAllPops,
   saveUserPop,
+  subscribePops,
   updatePop,
 } from "@/lib/user-pops";
 
@@ -41,12 +45,8 @@ export function PostForm({
   const [image, setImage] = useState<string | null>(initialPop?.image ?? null);
   const [file, setFile] = useState<File | undefined>();
   const [fileName, setFileName] = useState("");
-  const [selectedTags, setSelectedTags] = useState<string[]>(
-    initialPop?.tags.filter((tag) => popularTags.includes(tag)) ?? [],
-  );
-  const [customTags, setCustomTags] = useState<string[]>(
-    initialPop?.tags.filter((tag) => !popularTags.includes(tag)) ?? [],
-  );
+  const popsVersion = useSyncExternalStore(subscribePops, getPopsVersion, () => 0);
+  const [chosenTags, setChosenTags] = useState<string[]>(initialPop?.tags ?? []);
   const [tagDraft, setTagDraft] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -70,8 +70,17 @@ export function PostForm({
     }
   }
 
+  const chipTags = useMemo(() => {
+    const ranked = rankPopularTags(listAllPops());
+    return tagsForOneRow(
+      ranked,
+      chosenTags,
+      compact ? TAG_ROW_COMPACT : TAG_ROW,
+    );
+  }, [chosenTags, compact, popsVersion]);
+
   function toggleTag(tag: string) {
-    setSelectedTags((current) =>
+    setChosenTags((current) =>
       current.includes(tag)
         ? current.filter((item) => item !== tag)
         : [...current, tag],
@@ -81,20 +90,10 @@ export function PostForm({
   function addCustomTag() {
     const tag = normalizeTag(tagDraft);
     if (!tag) return;
-    if (popularTags.includes(tag)) {
-      setSelectedTags((current) =>
-        current.includes(tag) ? current : [...current, tag],
-      );
-    } else {
-      setCustomTags((current) =>
-        current.includes(tag) ? current : [...current, tag],
-      );
-    }
+    setChosenTags((current) =>
+      current.includes(tag) ? current : [...current, tag],
+    );
     setTagDraft("");
-  }
-
-  function removeCustomTag(tag: string) {
-    setCustomTags((current) => current.filter((item) => item !== tag));
   }
 
   async function onSubmit(event: FormEvent) {
@@ -123,7 +122,7 @@ export function PostForm({
 
     setBusy(true);
     setError("");
-    const tags = [...selectedTags, ...customTags];
+    const tags = chosenTags;
     try {
       if (editing && initialPop) {
         await updatePop(initialPop, {
@@ -271,16 +270,16 @@ export function PostForm({
       </p>
 
       <fieldset>
-        <legend className="mb-2 text-sm text-zinc-300">タグ</legend>
-        <div className="mb-3 flex flex-wrap gap-2">
-          {popularTags.map((tag) => {
-            const selected = selectedTags.includes(tag);
+        <legend className="mb-2 text-sm text-zinc-300">人気のタグ</legend>
+        <div className="mb-3 flex flex-nowrap gap-2 overflow-hidden">
+          {chipTags.map((tag) => {
+            const selected = chosenTags.includes(tag);
             return (
               <button
                 key={tag}
                 type="button"
                 onClick={() => toggleTag(tag)}
-                className={`rounded-full px-3 py-1.5 text-xs ${
+                className={`shrink-0 rounded-full px-3 py-1.5 text-xs ${
                   selected
                     ? "bg-white text-black"
                     : "bg-zinc-900 text-zinc-300 ring-1 ring-white/10"
@@ -290,16 +289,6 @@ export function PostForm({
               </button>
             );
           })}
-          {customTags.map((tag) => (
-            <button
-              key={tag}
-              type="button"
-              onClick={() => removeCustomTag(tag)}
-              className="rounded-full bg-white px-3 py-1.5 text-xs text-black"
-            >
-              #{tag}
-            </button>
-          ))}
         </div>
         <div className="flex gap-2">
           <input
@@ -323,7 +312,7 @@ export function PostForm({
           </button>
         </div>
         <span className="mt-1 block text-xs text-zinc-500">
-          #は不要です。文字を入れて追加を押すだけです
+          よく使われているタグです。ほかは下から追加できます
         </span>
       </fieldset>
 
