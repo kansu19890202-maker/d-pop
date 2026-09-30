@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState, useSyncExternalStore } from "react";
 import { CommentIcon, EyeIcon, HeartIcon, HeartOutlineIcon } from "@/components/Icons";
 import { ReportButton } from "@/components/ReportButton";
+import { EditPopDialog } from "@/components/EditPopDialog";
 import { useAuth } from "@/lib/auth-context";
 import { type Pop } from "@/lib/dummy-pops";
 import {
@@ -39,6 +40,7 @@ export function PopDetail({ popId }: { popId: string }) {
   const [pop, setPop] = useState<Pop | undefined>(() => findPopById(popId));
   const [draft, setDraft] = useState("");
   const [error, setError] = useState("");
+  const [editing, setEditing] = useState(false);
 
   useEffect(() => {
     setPop(findPopById(popId));
@@ -139,12 +141,13 @@ export function PopDetail({ popId }: { popId: string }) {
               {pop.author}
             </Link>
             {editable && (
-              <Link
-                href={`/pops/${encodeURIComponent(pop.id)}/edit`}
-                className="ml-3 text-xs text-zinc-500"
+              <button
+                type="button"
+                onClick={() => setEditing(true)}
+                className="ml-3 text-xs text-zinc-500 underline decoration-white/20 underline-offset-4"
               >
                 投稿内容を修正
-              </Link>
+              </button>
             )}
           </p>
         </div>
@@ -194,6 +197,9 @@ export function PopDetail({ popId }: { popId: string }) {
           {error ? <p className="mt-2 text-sm text-red-400">{error}</p> : null}
         </section>
       </div>
+      {editing && editable ? (
+        <EditPopDialog pop={pop} onClose={() => setEditing(false)} />
+      ) : null}
     </article>
   );
 }

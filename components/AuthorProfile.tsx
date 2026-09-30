@@ -4,7 +4,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState, useSyncExternalStore } from "react";
 import { CommentIcon, HeartIcon } from "@/components/Icons";
+import { EditPopDialog } from "@/components/EditPopDialog";
 import { useAuth } from "@/lib/auth-context";
+import { type Pop } from "@/lib/dummy-pops";
 import { findPopsByAuthor } from "@/lib/pops";
 import {
   getComments,
@@ -24,6 +26,7 @@ export function AuthorProfile({ name }: { name: string }) {
   const [pops, setPops] = useState(() => findPopsByAuthor(name));
   const [draft, setDraft] = useState("");
   const [error, setError] = useState("");
+  const [editingPop, setEditingPop] = useState<Pop | null>(null);
   const isSelf = Boolean(profile && profile.name === name);
   const messages = getMessages(name);
 
@@ -81,12 +84,13 @@ export function AuthorProfile({ name }: { name: string }) {
               </article>
             </Link>
             {canEditPop(pop, profile?.uid) ? (
-              <Link
-                href={`/pops/${encodeURIComponent(pop.id)}/edit`}
-                className="mt-1 block text-center text-[10px] text-zinc-500"
+              <button
+                type="button"
+                onClick={() => setEditingPop(pop)}
+                className="mt-1 block w-full text-center text-[10px] text-zinc-500 underline decoration-white/20 underline-offset-2"
               >
                 投稿内容を修正
-              </Link>
+              </button>
             ) : null}
           </li>
         ))}
@@ -131,6 +135,9 @@ export function AuthorProfile({ name }: { name: string }) {
           </>
         )}
       </section>
+      {editingPop ? (
+        <EditPopDialog pop={editingPop} onClose={() => setEditingPop(null)} />
+      ) : null}
     </div>
   );
 }

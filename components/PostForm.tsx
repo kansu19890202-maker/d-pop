@@ -20,9 +20,17 @@ import {
 
 type PostFormProps = {
   initialPop?: Pop;
+  onSaved?: () => void;
+  onCancel?: () => void;
+  compact?: boolean;
 };
 
-export function PostForm({ initialPop }: PostFormProps) {
+export function PostForm({
+  initialPop,
+  onSaved,
+  onCancel,
+  compact = false,
+}: PostFormProps) {
   const router = useRouter();
   const { loading, profile, configured } = useAuth();
   const editing = Boolean(initialPop);
@@ -124,6 +132,10 @@ export function PostForm({ initialPop }: PostFormProps) {
           tags,
           file,
         });
+        if (onSaved) {
+          onSaved();
+          return;
+        }
         router.push(`/pops/${encodeURIComponent(initialPop.id)}`);
         router.refresh();
         return;
@@ -183,7 +195,10 @@ export function PostForm({ initialPop }: PostFormProps) {
   }
 
   return (
-    <form onSubmit={onSubmit} className="mx-auto max-w-xl space-y-5 px-4 py-6">
+    <form
+      onSubmit={onSubmit}
+      className={`mx-auto max-w-xl space-y-5 ${compact ? "px-0 py-2" : "px-4 py-6"}`}
+    >
       <div>
         <span className="mb-2 block text-sm text-zinc-300">POP画像</span>
         <label className="inline-flex cursor-pointer items-center gap-3">
@@ -202,7 +217,13 @@ export function PostForm({ initialPop }: PostFormProps) {
         </label>
       </div>
 
-      <div className="aspect-[210/297] overflow-hidden rounded-sm bg-zinc-950">
+      <div
+        className={
+          compact
+            ? "mx-auto max-h-48 max-w-40 overflow-hidden rounded-sm bg-black"
+            : "aspect-[210/297] overflow-hidden rounded-sm bg-zinc-950"
+        }
+      >
         {image ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={image} alt="プレビュー" className="size-full object-contain" />
@@ -308,13 +329,24 @@ export function PostForm({ initialPop }: PostFormProps) {
 
       {error ? <p className="text-sm text-red-400">{error}</p> : null}
 
-      <button
-        type="submit"
-        disabled={busy}
-        className="w-full rounded-full bg-white py-3 text-sm font-bold text-black disabled:opacity-60"
-      >
-        {editing ? "変更を保存" : "投稿する"}
-      </button>
+      <div className={compact ? "flex gap-2" : undefined}>
+        {compact && onCancel ? (
+          <button
+            type="button"
+            onClick={onCancel}
+            className="w-full rounded-full bg-zinc-800 py-3 text-sm font-medium text-white"
+          >
+            閉じる
+          </button>
+        ) : null}
+        <button
+          type="submit"
+          disabled={busy}
+          className="w-full rounded-full bg-white py-3 text-sm font-bold text-black disabled:opacity-60"
+        >
+          {editing ? "変更を保存" : "投稿する"}
+        </button>
+      </div>
     </form>
   );
 }
