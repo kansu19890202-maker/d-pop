@@ -2,8 +2,6 @@ import {
   collection,
   doc,
   onSnapshot,
-  orderBy,
-  query,
   setDoc,
   updateDoc,
 } from "firebase/firestore";
@@ -54,13 +52,14 @@ export function startPopsListener() {
   const firebase = getFirebase();
   if (!firebase || typeof window === "undefined") return () => {};
   return onSnapshot(
-    query(collection(firebase.db, "pops"), orderBy("createdAt", "desc")),
+    collection(firebase.db, "pops"),
     (snap) => {
-      remotePops = snap.docs.map((item) =>
-        docToPop(item.id, item.data() as Record<string, unknown>),
-      );
+      remotePops = snap.docs
+        .map((item) => docToPop(item.id, item.data() as Record<string, unknown>))
+        .sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0));
       emitPopsChange();
     },
+    () => {},
   );
 }
 

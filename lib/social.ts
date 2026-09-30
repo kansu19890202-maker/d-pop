@@ -119,38 +119,46 @@ export function startSocialListener() {
   const firebase = getFirebase();
   if (!firebase || typeof window === "undefined") return () => {};
 
-  const stopStats = onSnapshot(collection(firebase.db, "popStats"), (snap) => {
-    const likes = { ...seedLikes };
-    for (const docSnap of snap.docs) {
-      const count = Number(docSnap.data().likeCount ?? 0);
-      likes[docSnap.id] = Math.max(likes[docSnap.id] ?? 0, count);
-    }
-    memory = { ...memory, likes };
-    bump();
-  });
+  const stopStats = onSnapshot(
+    collection(firebase.db, "popStats"),
+    (snap) => {
+      const likes = { ...seedLikes };
+      for (const docSnap of snap.docs) {
+        const count = Number(docSnap.data().likeCount ?? 0);
+        likes[docSnap.id] = Math.max(likes[docSnap.id] ?? 0, count);
+      }
+      memory = { ...memory, likes };
+      bump();
+    },
+    () => {},
+  );
 
-  const stopMessages = onSnapshot(collection(firebase.db, "messages"), (snap) => {
-    const grouped: Record<string, SocialMessage[]> = {};
-    for (const docSnap of snap.docs) {
-      const data = docSnap.data();
-      const to = String(data.to ?? "");
-      if (!to) continue;
-      grouped[to] = grouped[to] ?? [];
-      grouped[to].push({
-        id: docSnap.id,
-        from: String(data.from ?? ""),
-        fromId: data.fromId ? String(data.fromId) : undefined,
-        to,
-        text: String(data.text ?? ""),
-        createdAt: asTime(data.createdAt),
-      });
-    }
-    for (const list of Object.values(grouped)) {
-      list.sort((a, b) => a.createdAt - b.createdAt);
-    }
-    memory = { ...memory, messages: grouped };
-    bump();
-  });
+  const stopMessages = onSnapshot(
+    collection(firebase.db, "messages"),
+    (snap) => {
+      const grouped: Record<string, SocialMessage[]> = {};
+      for (const docSnap of snap.docs) {
+        const data = docSnap.data();
+        const to = String(data.to ?? "");
+        if (!to) continue;
+        grouped[to] = grouped[to] ?? [];
+        grouped[to].push({
+          id: docSnap.id,
+          from: String(data.from ?? ""),
+          fromId: data.fromId ? String(data.fromId) : undefined,
+          to,
+          text: String(data.text ?? ""),
+          createdAt: asTime(data.createdAt),
+        });
+      }
+      for (const list of Object.values(grouped)) {
+        list.sort((a, b) => a.createdAt - b.createdAt);
+      }
+      memory = { ...memory, messages: grouped };
+      bump();
+    },
+    () => {},
+  );
 
   return () => {
     stopStats();
@@ -187,6 +195,7 @@ export function startCommentsListener(popId: string) {
       };
       bump();
     },
+    () => {},
   );
 }
 
