@@ -51,7 +51,7 @@ export function PopDetail({ popId }: { popId: string }) {
 
   function onComment(event: FormEvent) {
     event.preventDefault();
-    if (!draft.trim()) return;
+    if (!pop || !draft.trim()) return;
     addComment(pop.id, readAuthorName(), draft);
     setDraft("");
   }
