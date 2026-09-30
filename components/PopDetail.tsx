@@ -105,7 +105,7 @@ export function PopDetail({ popId }: { popId: string }) {
           className="size-full object-contain"
         />
       </div>
-      <UseNotice className="px-4 pt-3 text-[11px] leading-relaxed text-zinc-500" />
+      <UseNotice className="px-4 pt-3 text-[11px] leading-relaxed text-zinc-300" />
 
       <div className="space-y-3 px-4 py-4">
         <div className="flex items-center gap-4">
