@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState, useSyncExternalStore } from "react";
-import { CommentIcon, HeartIcon, HeartOutlineIcon } from "@/components/Icons";
+import { CommentIcon, EyeIcon, HeartIcon, HeartOutlineIcon } from "@/components/Icons";
 import { ReportButton } from "@/components/ReportButton";
 import { useAuth } from "@/lib/auth-context";
 import { type Pop } from "@/lib/dummy-pops";
@@ -12,6 +12,7 @@ import {
   getComments,
   getLikeCount,
   getSocialVersion,
+  getViewCount,
   hasLiked,
   refreshLiked,
   startCommentsListener,
@@ -60,6 +61,7 @@ export function PopDetail({ popId }: { popId: string }) {
   const comments = getComments(pop.id);
   const liked = hasLiked(pop.id);
   const likes = getLikeCount(pop.id);
+  const views = getViewCount(pop.id);
   const editable = canEditPop(pop, profile?.uid);
 
   async function onLike() {
@@ -118,6 +120,10 @@ export function PopDetail({ popId }: { popId: string }) {
           <span className="flex items-center gap-1.5 text-sm text-zinc-300">
             <CommentIcon className="size-6" />
             {comments.length}
+          </span>
+          <span className="flex items-center gap-1.5 text-sm text-zinc-400">
+            <EyeIcon className="size-5" />
+            {views}
           </span>
           <ReportButton popTitle={pop.title} />
         </div>

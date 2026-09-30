@@ -27,6 +27,7 @@ export type SocialMessage = {
 
 type SocialState = {
   likes: Record<string, number>;
+  views: Record<string, number>;
   liked: Record<string, boolean>;
   comments: Record<string, SocialComment[]>;
   messages: Record<string, SocialMessage[]>;
@@ -35,28 +36,88 @@ type SocialState = {
 const EVENT = "dpop-social";
 
 const seedLikes: Record<string, number> = {
-  "1": 18,
-  "2": 9,
-  "3": 31,
-  "4": 4,
-  "5": 7,
-  "6": 22,
-  "7": 15,
-  "8": 11,
-  "9": 6,
-  "10": 3,
-  "11": 8,
-  "12": 5,
-  "13": 12,
+  "1": 86,
+  "2": 54,
+  "3": 121,
+  "4": 33,
+  "5": 41,
+  "6": 97,
+  "7": 72,
+  "8": 58,
+  "9": 39,
+  "10": 28,
+  "11": 44,
+  "12": 63,
+  "13": 70,
+};
+
+const seedViews: Record<string, number> = {
+  "1": 640,
+  "2": 410,
+  "3": 890,
+  "4": 240,
+  "5": 310,
+  "6": 720,
+  "7": 480,
+  "8": 390,
+  "9": 260,
+  "10": 190,
+  "11": 300,
+  "12": 450,
+  "13": 510,
 };
 
 const seedComments: Record<string, SocialComment[]> = {
   "1": [
     {
       id: "c1",
-      author: "ゲスト2041",
-      text: "ポスターの色味が最高です",
+      author: "あおい",
+      text: "色の使い方が上手すぎる。店に貼りたい",
       createdAt: Date.parse("2025-04-21T12:00:00"),
+    },
+    {
+      id: "c14",
+      author: "ケイ",
+      text: "ヒューゴローの雰囲気出てますね",
+      createdAt: Date.parse("2025-04-22T21:10:00"),
+    },
+  ],
+  "2": [
+    {
+      id: "c4",
+      author: "みさ",
+      text: "井能選手の回、このPOPで知りました",
+      createdAt: Date.parse("2025-04-06T19:20:00"),
+    },
+  ],
+  "3": [
+    {
+      id: "c5",
+      author: "ハル",
+      text: "村松・鈴木の並びが強すぎる",
+      createdAt: Date.parse("2025-03-20T08:40:00"),
+    },
+    {
+      id: "c15",
+      author: "なつき",
+      text: "レイアウト参考にさせてもらいます",
+      createdAt: Date.parse("2025-03-21T14:05:00"),
+    },
+  ],
+  "4": [
+    {
+      id: "c6",
+      author: "ダーツ好きのケン",
+      text: "シンプルで見やすい",
+      createdAt: Date.parse("2025-02-06T11:00:00"),
+    },
+  ],
+  "5": [
+    {
+      id: "c7",
+      author: "りく",
+      text: "日付が大きくて助かる",
+      createdAt: Date.parse("2024-11-07T18:30:00"),
     },
   ],
   "6": [
@@ -72,11 +133,74 @@ const seedComments: Record<string, SocialComment[]> = {
       text: "デザイン参考にさせてください",
       createdAt: Date.parse("2024-10-27T18:00:00"),
     },
+    {
+      id: "c16",
+      author: "ゆうき",
+      text: "シングルの告知これ見本にしたい",
+      createdAt: Date.parse("2024-10-28T12:15:00"),
+    },
+  ],
+  "7": [
+    {
+      id: "c8",
+      author: "さとし",
+      text: "黒田・岩田のカード欲しい",
+      createdAt: Date.parse("2024-10-26T10:00:00"),
+    },
+  ],
+  "8": [
+    {
+      id: "c9",
+      author: "かな",
+      text: "三浦選手の回、行きたかった",
+      createdAt: Date.parse("2024-10-13T21:40:00"),
+    },
+  ],
+  "9": [
+    {
+      id: "c10",
+      author: "しょう",
+      text: "写真の切り方がきれい",
+      createdAt: Date.parse("2024-09-07T16:20:00"),
+    },
+  ],
+  "10": [
+    {
+      id: "c11",
+      author: "まこと",
+      text: "情報量がちょうどいい",
+      createdAt: Date.parse("2024-09-03T09:50:00"),
+    },
+  ],
+  "11": [
+    {
+      id: "c12",
+      author: "ひろ",
+      text: "8月のシリーズこれで覚えてた",
+      createdAt: Date.parse("2024-08-02T13:00:00"),
+    },
+  ],
+  "12": [
+    {
+      id: "c13",
+      author: "あかり",
+      text: "チラシとして完成度高いです",
+      createdAt: Date.parse("2024-07-24T20:05:00"),
+    },
+  ],
+  "13": [
+    {
+      id: "c17",
+      author: "だいき",
+      text: "このトーンの告知、好きです",
+      createdAt: Date.parse("2024-07-01T19:00:00"),
+    },
   ],
 };
 
 let memory: SocialState = {
   likes: { ...seedLikes },
+  views: { ...seedViews },
   liked: {},
   comments: Object.fromEntries(
     Object.entries(seedComments).map(([id, list]) => [id, [...list]]),
@@ -123,11 +247,14 @@ export function startSocialListener() {
     collection(firebase.db, "popStats"),
     (snap) => {
       const likes = { ...seedLikes };
+      const views = { ...seedViews };
       for (const docSnap of snap.docs) {
         const count = Number(docSnap.data().likeCount ?? 0);
         likes[docSnap.id] = Math.max(likes[docSnap.id] ?? 0, count);
+        const viewCount = Number(docSnap.data().viewCount ?? 0);
+        views[docSnap.id] = Math.max(views[docSnap.id] ?? 0, viewCount);
       }
-      memory = { ...memory, likes };
+      memory = { ...memory, likes, views };
       bump();
     },
     () => {},
@@ -201,6 +328,10 @@ export function startCommentsListener(popId: string) {
 
 export function getLikeCount(popId: string) {
   return memory.likes[popId] ?? seedLikes[popId] ?? 0;
+}
+
+export function getViewCount(popId: string) {
+  return memory.views[popId] ?? seedViews[popId] ?? 0;
 }
 
 export function hasLiked(popId: string) {

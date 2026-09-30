@@ -2,9 +2,15 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
-import { CommentIcon, HeartIcon } from "@/components/Icons";
+import { CommentIcon, EyeIcon, HeartIcon } from "@/components/Icons";
 import { popularTags, type Pop } from "@/lib/dummy-pops";
-import { getComments, getLikeCount, getSocialVersion, subscribeSocial } from "@/lib/social";
+import {
+  getComments,
+  getLikeCount,
+  getSocialVersion,
+  getViewCount,
+  subscribeSocial,
+} from "@/lib/social";
 import {
   getPopsVersion,
   listAllPops,
@@ -162,6 +168,10 @@ export function Gallery({ pops }: GalleryProps) {
                         <span className="inline-flex items-center gap-1">
                           <CommentIcon className="size-3.5" />
                           {getComments(pop.id).length}
+                        </span>
+                        <span className="inline-flex items-center gap-1">
+                          <EyeIcon className="size-3.5" />
+                          {getViewCount(pop.id)}
                         </span>
                       </p>
                     </div>
