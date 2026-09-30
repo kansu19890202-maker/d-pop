@@ -3,10 +3,13 @@ import { AuthorProfile } from "@/components/AuthorProfile";
 
 export default async function UserPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ name: string }>;
+  searchParams: Promise<{ from?: string }>;
 }) {
   const { name } = await params;
+  const { from } = await searchParams;
   const author = decodeURIComponent(name);
 
   return (
@@ -16,7 +19,7 @@ export default async function UserPage({
           ← ホーム
         </Link>
       </header>
-      <AuthorProfile name={author} />
+      <AuthorProfile name={author} fromPopId={from} />
     </div>
   );
 }

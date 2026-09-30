@@ -122,7 +122,11 @@ export function Gallery({ pops }: GalleryProps) {
               </span>
               <span aria-hidden="true">◆</span>
               <span>
-                気になるイベントは検索やタグから探せます。自分で作ったPOPは、下の「投稿する」からシェアできます。
+                気になる作品は、いいねやコメントで作者に届きます。同じ店の告知を頼みたいときは、詳細から制作を依頼できます。
+              </span>
+              <span aria-hidden="true">◆</span>
+              <span>
+                画像の無断転載・商用利用は禁止です。保存できても、使うときは作者の許可が必要です。
               </span>
               <span aria-hidden="true">◆</span>
             </p>

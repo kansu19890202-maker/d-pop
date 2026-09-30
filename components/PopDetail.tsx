@@ -6,6 +6,7 @@ import { FormEvent, useEffect, useState, useSyncExternalStore } from "react";
 import { CommentIcon, EyeIcon, HeartIcon, HeartOutlineIcon } from "@/components/Icons";
 import { ReportButton } from "@/components/ReportButton";
 import { EditPopDialog } from "@/components/EditPopDialog";
+import { UseNotice } from "@/components/UseNotice";
 import { useAuth } from "@/lib/auth-context";
 import { type Pop } from "@/lib/dummy-pops";
 import {
@@ -104,6 +105,7 @@ export function PopDetail({ popId }: { popId: string }) {
           className="size-full object-contain"
         />
       </div>
+      <UseNotice className="px-4 pt-3 text-[11px] leading-relaxed text-zinc-500" />
 
       <div className="space-y-3 px-4 py-4">
         <div className="flex items-center gap-4">
@@ -149,6 +151,14 @@ export function PopDetail({ popId }: { popId: string }) {
                 投稿内容を修正
               </button>
             )}
+            {!editable ? (
+              <Link
+                href={`/users/${encodeURIComponent(pop.author)}?from=${encodeURIComponent(pop.id)}#request`}
+                className="ml-3 text-xs text-zinc-400 underline decoration-white/20 underline-offset-4"
+              >
+                制作を依頼
+              </Link>
+            ) : null}
           </p>
         </div>
 
