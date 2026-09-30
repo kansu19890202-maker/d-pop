@@ -143,8 +143,13 @@ export function PostForm({ initialPop }: PostFormProps) {
       });
       router.push(`/pops/${encodeURIComponent(pop.id)}`);
       router.refresh();
-    } catch {
-      setError("保存できませんでした。画像サイズや通信環境を確認してください");
+    } catch (cause) {
+      console.error(cause);
+      setError(
+        editing
+          ? "保存できませんでした。通信環境を確認して、もう一度お試しください"
+          : "保存できませんでした。画像サイズや通信環境を確認してください",
+      );
       setBusy(false);
     }
   }

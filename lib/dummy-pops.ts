@@ -38,7 +38,7 @@ export const popularTags = [
 export const dummyPops: Pop[] = [
   {
     id: "1",
-    title: "ヒューゴロー",
+    title: "ヒューゴリョンジェームスロー",
     date: "2025.04.20",
     author: SAMPLE_AUTHOR,
     image: "/sample/20250420-01.png",

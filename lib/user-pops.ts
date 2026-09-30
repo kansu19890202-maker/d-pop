@@ -4,6 +4,7 @@ import {
   onSnapshot,
   setDoc,
   updateDoc,
+  type UpdateData,
 } from "firebase/firestore";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { dummyPops, type Pop } from "@/lib/dummy-pops";
@@ -123,14 +124,18 @@ export async function updatePop(
     await uploadBytes(fileRef, blob, { contentType: "image/jpeg" });
     image = await getDownloadURL(fileRef);
   }
-  await updateDoc(doc(firebase.db, "pops", current.id), {
+  const next: Record<string, unknown> = {
     title: patch.title,
     date: patch.date,
     tags: patch.tags,
     image,
-    storagePath,
     updatedAt: Date.now(),
-  });
+  };
+  if (storagePath) next.storagePath = storagePath;
+  await updateDoc(
+    doc(firebase.db, "pops", current.id),
+    next as UpdateData<Pop>,
+  );
 }
 
 export function canEditPop(pop: Pop, uid: string | undefined) {
