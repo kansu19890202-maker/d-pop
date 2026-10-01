@@ -12,7 +12,7 @@ export default function PrivacyPage() {
       <p>
         D-POP運営者（以下、「運営」）は、画像共有サービス「D-POP」（以下、「本サービス」）におけるユーザーの個人情報および関連データの取扱いについて、以下のとおりプライバシーポリシー（以下、「本ポリシー」）を定めます。本サービスを利用することにより、ユーザーは本ポリシーに同意したものとみなされます。
       </p>
-      <p className="text-zinc-500">最終更新日: 2026年9月30日</p>
+      <p className="text-zinc-500">最終更新日: 2026年10月1日</p>
 
       <LegalSection title="第1条（収集する情報）">
         <p>運営は、本サービスの提供にあたり、次の情報を取得することがあります。</p>
@@ -46,7 +46,7 @@ export default function PrivacyPage() {
 
       <LegalSection title="第3条（Cookie等の利用）">
         <p>
-          本サービスは、利便性の向上、ログイン状態の維持、アクセス解析のためにCookieまたはこれに類する技術を使用することがあります。ブラウザの設定によりCookieを無効にできますが、その場合、本サービスの一部機能が利用できなくなることがあります。
+          本サービスは、利便性の向上、ログイン状態の維持、アクセス解析のためにCookieまたはこれに類する技術を使用することがあります。アクセス状況の把握には Vercel Web Analytics および表示速度の計測に Vercel Speed Insights を利用します。ブラウザの設定によりCookieを無効にできますが、その場合、本サービスの一部機能が利用できなくなることがあります。
         </p>
       </LegalSection>
 
@@ -61,7 +61,7 @@ export default function PrivacyPage() {
             人の生命、身体または財産の保護のために必要であり、本人の同意を得ることが困難な場合
           </li>
           <li>
-            本サービスの運営委託先に、委託目的の達成に必要な範囲で取り扱わせる場合（この場合、委託先に適切な管理を求めます）。アカウント認証、投稿データ、画像ファイルの保管には Google Firebase（Authentication、Cloud Firestore、Cloud Storage）を利用します。
+            本サービスの運営委託先に、委託目的の達成に必要な範囲で取り扱わせる場合（この場合、委託先に適切な管理を求めます）。アカウント認証、投稿データ、画像ファイルの保管には Google Firebase（Authentication、Cloud Firestore、Cloud Storage）を利用します。アクセス解析および表示速度の計測には Vercel（Web Analytics、Speed Insights）を利用します。
           </li>
         </ol>
         <p>

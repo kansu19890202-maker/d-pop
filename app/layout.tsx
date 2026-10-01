@@ -1,3 +1,5 @@
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { BottomNav } from "@/components/BottomNav";
 import { Providers } from "@/components/Providers";
 import { SiteFooter } from "@/components/SiteFooter";
@@ -31,6 +33,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           {children}
           <SiteFooter />
           <BottomNav />
+          <Analytics />
+          <SpeedInsights />
         </Providers>
       </body>
     </html>
